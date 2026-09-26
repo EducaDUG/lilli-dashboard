@@ -1,0 +1,1677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lilli Learning Dashboard</title>
+<style>
+  :root{
+    /* Palette pulled directly from Discovery Lab's live homepage
+       (https://educadug.github.io/discovery-lab/, engine/style.css?v=12),
+       which renders with :root, [data-theme="earth"] - "Environmental Science -
+       soil, water, air". Confirmed against the fetched stylesheet, not invented. */
+    --paper:#F2EFE6; --surface:#FBF9F3; --surface-2:#EAE6D9;
+    --ink:#1D211C; --ink-2:#4A5148; --ink-3:#757C72;
+    --line:#1D211C24; --line-strong:#1D211C40;
+    --accent:#40634C; --accent-hi:#517B5E; --accent-ink:#FBF9F3;
+    --accent-wash:#40634C14;
+    --signal:#B5551F; --signal-wash:#B5551F14;
+    --positive:#2F6B45; --caution:#A66B00;
+    --radius:14px; --radius-lg:22px;
+    --font-display:"Fraunces","Iowan Old Style",Georgia,serif;
+    --font-ui:"Public Sans",ui-sans-serif,system-ui,"Segoe UI",sans-serif;
+    --font-data:"JetBrains Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:var(--font-ui);background-color:var(--paper);color:var(--ink);line-height:1.55;
+    /* Faint field-notebook grid, same recipe as the Discovery Lab homepage body rule. */
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:48px 48px,48px 48px;
+    background-position:-1px -1px;
+  }
+  a{color:var(--signal);}
+  .eyebrow-label{font-family:var(--font-data);font-size:0.72rem;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--signal);display:inline-flex;align-items:center;gap:6px;}
+  .target-icon{display:inline-block;width:14px;height:14px;vertical-align:middle;color:var(--signal);}
+  .shell{max-width:920px;margin:0 auto;padding:0 20px;}
+  header.site{background:var(--surface);border-bottom:1px dashed var(--line-strong);padding:22px 0;}
+  header.site h1{font-family:var(--font-display);font-size:1.9rem;margin:0 0 4px;
+    font-variation-settings:"wght" 600;}
+  header.site p{margin:0;color:var(--ink-2);font-size:0.95rem;}
+  nav.tabs{display:flex;gap:8px;flex-wrap:wrap;background:var(--surface);border-bottom:1px dashed var(--line-strong);
+    padding:10px 0;position:sticky;top:0;z-index:5;}
+  nav.tabs .shell{display:flex;gap:8px;flex-wrap:wrap;}
+  .tab-btn{border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);
+    padding:9px 14px;border-radius:999px;font:inherit;font-family:var(--font-data);
+    text-transform:uppercase;letter-spacing:.04em;font-weight:700;font-size:0.78rem;cursor:pointer;}
+  .tab-btn.active{background:var(--signal);color:var(--accent-ink);border-color:var(--signal);}
+  main{padding:26px 0 60px;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+  h2.panel-title{font-family:var(--font-display);font-size:1.5rem;margin:0 0 6px;}
+  .panel-sub{color:var(--ink-2);margin:0 0 20px;font-size:0.95rem;max-width:64ch;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);
+    padding:18px 20px;margin-bottom:16px;}
+  .card + .card{border-top:1px dashed var(--line-strong);}
+  .card h3{margin:0 0 8px;font-size:1.05rem;font-family:var(--font-display);}
+  .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;}
+  .stat{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:var(--radius);padding:14px 16px;}
+  .stat .num{font-family:var(--font-data);font-size:1.6rem;font-weight:700;color:var(--accent);}
+  .stat .label{font-size:0.8rem;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em;}
+  .focus-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;}
+  .focus-card{border-radius:var(--radius);padding:16px;border:1px solid var(--line);}
+  .focus-card.win{border-left:4px solid var(--positive);background:#2F6B4508;}
+  .focus-card.tonight{border-left:4px solid var(--signal);background:var(--signal-wash);}
+  .focus-card.edge{border-left:4px solid var(--caution);background:#A66B0010;}
+  .focus-card .eyebrow{font-family:var(--font-data);font-size:.72rem;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--ink-2);margin-bottom:6px;}
+  .quote-card{border-left:3px solid var(--accent);padding:12px 16px;margin-bottom:10px;background:var(--surface);
+    border-radius:var(--radius);}
+  .quote-card blockquote{margin:0 0 6px;font-family:var(--font-display);font-size:1.05rem;font-style:italic;color:var(--ink);}
+  .quote-card .interp{font-size:0.85rem;color:var(--ink-2);}
+  .pill{display:inline-block;font-family:var(--font-data);font-size:0.72rem;text-transform:uppercase;
+    letter-spacing:.06em;padding:3px 10px;border-radius:999px;border:1px solid var(--line-strong);color:var(--ink-2);
+    background:var(--surface-2);margin-right:6px;}
+  .pill.stage-Emerging{color:#A66B00;border-color:#A66B0055;background:#A66B0014;}
+  .pill.stage-Developing{color:#B5551F;border-color:#B5551F55;background:#B5551F14;}
+  .pill.stage-Growing{color:#517B5E;border-color:#517B5E55;background:#517B5E14;}
+  .pill.stage-Secure{color:#2F6B45;border-color:#2F6B4555;background:#2F6B4514;}
+  .chart-card svg{width:100%;height:auto;display:block;}
+  .chart-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:0.82rem;color:var(--ink-2);}
+  .legend-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle;}
+  .evidence-pop{display:none;margin-top:10px;padding:10px 12px;border-radius:var(--radius);
+    background:var(--surface-2);font-size:0.86rem;color:var(--ink-2);}
+  .evidence-pop.show{display:block;}
+  .milestone{display:flex;gap:12px;margin-bottom:14px;}
+  .milestone .dot{width:10px;height:10px;border-radius:50%;background:var(--signal);flex:0 0 auto;margin-top:6px;}
+  .milestone .date{font-family:var(--font-data);font-size:0.78rem;color:var(--ink-3);}
+  .profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .profile-grid .item{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;}
+  .profile-grid .item .k{font-family:var(--font-data);font-size:0.72rem;text-transform:uppercase;color:var(--ink-2);
+    margin-bottom:4px;}
+  .basis-note{font-size:0.8rem;color:var(--ink-3);margin-top:6px;}
+  ul.plain{margin:0;padding-left:18px;}
+  ul.plain li{margin-bottom:6px;}
+  details.session{border:1px solid var(--line);border-radius:var(--radius);margin-bottom:10px;background:var(--surface);}
+  details.session summary{padding:12px 16px;cursor:pointer;font-weight:700;list-style:none;font-family:var(--font-display);}
+  details.session summary::-webkit-details-marker{display:none;}
+  details.session summary .sdate{font-family:var(--font-data);font-size:0.78rem;color:var(--ink-2);
+    font-weight:400;display:block;text-transform:uppercase;letter-spacing:.04em;}
+  details.session .session-body{padding:0 16px 16px;border-top:1px dashed var(--line-strong);}
+  details.session .session-body h4{font-size:0.85rem;margin:14px 0 6px;color:var(--ink-2);text-transform:uppercase;
+    letter-spacing:.03em;}
+  .resource-link{display:block;margin-bottom:8px;}
+  .resource-link a{font-weight:700;word-break:break-word;}
+  .resource-link .note{font-size:0.85rem;color:var(--ink-2);}
+  .about-portrait-row{display:flex;gap:18px;align-items:center;margin-bottom:16px;flex-wrap:wrap;}
+  .btn-linkedin{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:var(--accent-ink);
+    padding:10px 16px;border-radius:999px;text-decoration:none;font-weight:700;font-size:0.9rem;}
+  .about-hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;margin-bottom:22px;}
+  .about-photo-wrap{position:relative;width:168px;height:168px;margin:6px 0 8px;display:flex;align-items:center;justify-content:center;}
+  .about-photo-wrap::before{content:"";position:absolute;inset:-22px;border-radius:50%;
+    background:radial-gradient(circle,#40634C55 0%,#40634C22 40%,transparent 72%);}
+  .about-photo-wrap::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--accent-hi);opacity:.65;}
+  .about-photo{position:relative;width:168px;height:168px;border-radius:50%;object-fit:cover;
+    border:3px solid var(--surface);box-shadow:0 0 0 1px var(--line-strong);z-index:1;}
+  .about-heading{font-family:var(--font-display);font-size:1.9rem;margin:2px 0 0;font-variation-settings:"wght" 600;}
+  .about-subheading{color:var(--ink-2);max-width:52ch;margin:0;font-size:0.98rem;}
+  .about-chip-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:6px 0 4px;}
+  .about-chip{font-family:var(--font-data);font-size:0.72rem;text-transform:uppercase;letter-spacing:.05em;
+    padding:5px 12px;border-radius:999px;border:1px solid var(--line-strong);color:var(--ink-2);background:var(--surface-2);}
+  .about-closing h3{margin:0 0 6px;font-family:var(--font-display);font-size:1.1rem;}
+  footer.disclaimer{border-top:1px solid var(--line);margin-top:24px;padding-top:16px;font-size:0.8rem;color:var(--ink-3);}
+  @media (max-width:640px){
+    .stat-row,.focus-row,.profile-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <div class="shell">
+    <h1>Lilli's Learning Dashboard</h1>
+    <p>A voluntary, supplementary learning resource from Mr. Guevara. Please refer to Canvas / the Learning Lab for grades, deadlines and official progress reports.</p>
+  </div>
+</header>
+<nav class="tabs">
+  <div class="shell">
+    <button class="tab-btn active" data-tab="overview">Overview</button>
+    <button class="tab-btn" data-tab="progress">Progress</button>
+    <button class="tab-btn" data-tab="helpathome">Help at Home</button>
+    <button class="tab-btn" data-tab="sessions">Sessions</button>
+    <button class="tab-btn" data-tab="about">About</button>
+  </div>
+</nav>
+<main class="shell">
+
+  <section class="panel active" id="tab-overview"></section>
+  <section class="panel" id="tab-progress"></section>
+  <section class="panel" id="tab-helpathome"></section>
+  <section class="panel" id="tab-sessions"></section>
+  <section class="panel" id="tab-about"></section>
+
+</main>
+
+<script id="dashboard-v2-data" type="application/json">{
+  "student_first_name": "Lilli",
+  "programme": "CGA Primary Science",
+  "canvas_note": "Please refer to Canvas for quantitative information such as grades, deadlines, submitted work, and formal assessment data.",
+  "dashboard_purpose_note": "This dashboard is a voluntary teaching resource created by Mr. Guevara to show the student's longer-term learning journey, recurring patterns, and next steps across lessons.",
+  "professional_observation_note": "The learning notes in this dashboard are Mr. Guevara's professional observations based on lessons. They are not fixed labels, diagnoses, grades, or formal assessment results.",
+  "stats": {
+    "sessions_logged": 5,
+    "distinct_skills_tried": 36,
+    "milestones_hit": 3
+  },
+  "skill_threads": {
+    "Nutrient roles": [
+      {
+        "session_date_iso": "2026-09-22",
+        "session_date": "22 September 2026",
+        "lesson_title": "Nutrition Pentagon Health",
+        "stage": "Developing",
+        "evidence": "Lilli applied nutrition vocabulary independently when drawing her own healthy plate, needing only one small prompt to add fruit."
+      }
+    ],
+    "Pentagon of Health framework": [
+      {
+        "session_date_iso": "2026-09-22",
+        "session_date": "22 September 2026",
+        "lesson_title": "Nutrition Pentagon Health",
+        "stage": "Developing",
+        "evidence": "Lilli applied nutrition vocabulary independently when drawing her own healthy plate, needing only one small prompt to add fruit."
+      }
+    ],
+    "Applying nutrition to a real plate": [
+      {
+        "session_date_iso": "2026-09-22",
+        "session_date": "22 September 2026",
+        "lesson_title": "Nutrition Pentagon Health",
+        "stage": "Secure",
+        "evidence": "Lilli applied nutrition vocabulary independently when drawing her own healthy plate, needing only one small prompt to add fruit."
+      }
+    ],
+    "Verbal explanation of reasoning": [
+      {
+        "session_date_iso": "2026-09-22",
+        "session_date": "22 September 2026",
+        "lesson_title": "Nutrition Pentagon Health",
+        "stage": "Growing",
+        "evidence": "Lilli applied nutrition vocabulary independently when drawing her own healthy plate, needing only one small prompt to add fruit."
+      }
+    ],
+    "Nutrient vocabulary": [
+      {
+        "session_date_iso": "2026-05-26",
+        "session_date": "26 May 2026",
+        "lesson_title": "Nutrition Healthy Living",
+        "stage": "Developing",
+        "evidence": "Lilli used a shorter lesson well and connected everyday healthy choices with science vocabulary."
+      }
+    ],
+    "Healthy living pillars": [
+      {
+        "session_date_iso": "2026-05-26",
+        "session_date": "26 May 2026",
+        "lesson_title": "Nutrition Healthy Living",
+        "stage": "Developing",
+        "evidence": "Lilli used a shorter lesson well and connected everyday healthy choices with science vocabulary."
+      }
+    ],
+    "Practical decision making": [
+      {
+        "session_date_iso": "2026-05-26",
+        "session_date": "26 May 2026",
+        "lesson_title": "Nutrition Healthy Living",
+        "stage": "Developing",
+        "evidence": "Lilli used a shorter lesson well and connected everyday healthy choices with science vocabulary."
+      }
+    ],
+    "Organisation": [
+      {
+        "session_date_iso": "2026-05-26",
+        "session_date": "26 May 2026",
+        "lesson_title": "Nutrition Healthy Living",
+        "stage": "Growing",
+        "evidence": "Lilli used a shorter lesson well and connected everyday healthy choices with science vocabulary."
+      }
+    ],
+    "Taxonomy vocabulary": [
+      {
+        "session_date_iso": "2026-05-19",
+        "session_date": "19 May 2026",
+        "lesson_title": "Classification Taxonomy",
+        "stage": "Developing",
+        "evidence": "Lilli began turning classification from a list of names into a reasoning process based on traits and increasingly specific groups."
+      }
+    ],
+    "Vertebrate sorting": [
+      {
+        "session_date_iso": "2026-05-19",
+        "session_date": "19 May 2026",
+        "lesson_title": "Classification Taxonomy",
+        "stage": "Developing",
+        "evidence": "Lilli began turning classification from a list of names into a reasoning process based on traits and increasingly specific groups."
+      }
+    ],
+    "Classification reasoning": [
+      {
+        "session_date_iso": "2026-05-19",
+        "session_date": "19 May 2026",
+        "lesson_title": "Classification Taxonomy",
+        "stage": "Growing",
+        "evidence": "Lilli began turning classification from a list of names into a reasoning process based on traits and increasingly specific groups."
+      }
+    ],
+    "Dichotomous keys": [
+      {
+        "session_date_iso": "2026-05-19",
+        "session_date": "19 May 2026",
+        "lesson_title": "Classification Taxonomy",
+        "stage": "Developing",
+        "evidence": "Lilli began turning classification from a list of names into a reasoning process based on traits and increasingly specific groups."
+      }
+    ],
+    "Cell basics": [
+      {
+        "session_date_iso": "2026-05-05",
+        "session_date": "5 May 2026",
+        "lesson_title": "Cells Plant Animal",
+        "stage": "Developing",
+        "evidence": "Lilli connected new cell vocabulary with earlier plant-cell memories and began organising the difference between everyday categories and biological categories."
+      }
+    ],
+    "Plant and animal comparison": [
+      {
+        "session_date_iso": "2026-05-05",
+        "session_date": "5 May 2026",
+        "lesson_title": "Cells Plant Animal",
+        "stage": "Developing",
+        "evidence": "Lilli connected new cell vocabulary with earlier plant-cell memories and began organising the difference between everyday categories and biological categories."
+      }
+    ],
+    "Microscopic scale": [
+      {
+        "session_date_iso": "2026-05-05",
+        "session_date": "5 May 2026",
+        "lesson_title": "Cells Plant Animal",
+        "stage": "Growing",
+        "evidence": "Lilli connected new cell vocabulary with earlier plant-cell memories and began organising the difference between everyday categories and biological categories."
+      }
+    ],
+    "Precise explanations": [
+      {
+        "session_date_iso": "2026-05-05",
+        "session_date": "5 May 2026",
+        "lesson_title": "Cells Plant Animal",
+        "stage": "Developing",
+        "evidence": "Lilli connected new cell vocabulary with earlier plant-cell memories and began organising the difference between everyday categories and biological categories."
+      }
+    ],
+    "Evidence from fossils": [
+      {
+        "session_date_iso": "2026-04-28",
+        "session_date": "28 April 2026",
+        "lesson_title": "Fossils Early Life",
+        "stage": "Developing",
+        "evidence": "Lilli moved from uncertainty to pattern recognition during the fossil-ordering task."
+      }
+    ],
+    "Rock-layer reasoning": [
+      {
+        "session_date_iso": "2026-04-28",
+        "session_date": "28 April 2026",
+        "lesson_title": "Fossils Early Life",
+        "stage": "Developing",
+        "evidence": "Lilli moved from uncertainty to pattern recognition during the fossil-ordering task."
+      }
+    ],
+    "Simulation independence": [
+      {
+        "session_date_iso": "2026-04-28",
+        "session_date": "28 April 2026",
+        "lesson_title": "Fossils Early Life",
+        "stage": "Growing",
+        "evidence": "Lilli moved from uncertainty to pattern recognition during the fossil-ordering task."
+      }
+    ],
+    "Scientific explanation": [
+      {
+        "session_date_iso": "2026-04-28",
+        "session_date": "28 April 2026",
+        "lesson_title": "Fossils Early Life",
+        "stage": "Developing",
+        "evidence": "Lilli moved from uncertainty to pattern recognition during the fossil-ordering task."
+      }
+    ]
+  },
+  "milestones": [
+    {
+      "session_date": "28 April 2026",
+      "session_date_iso": "2026-04-28",
+      "title": "She recognised how the fossil activity became easier once she found the pattern in the lay",
+      "detail": "She recognised how the fossil activity became easier once she found the pattern in the layers."
+    },
+    {
+      "session_date": "5 May 2026",
+      "session_date_iso": "2026-05-05",
+      "title": "She remembered chloroplasts from earlier learning and identified them again during the les",
+      "detail": "She remembered chloroplasts from earlier learning and identified them again during the lesson check."
+    },
+    {
+      "session_date": "19 May 2026",
+      "session_date_iso": "2026-05-19",
+      "title": "She correctly sorted a strong set of vertebrate and invertebrate examples and reasoned thr",
+      "detail": "She correctly sorted a strong set of vertebrate and invertebrate examples and reasoned through why a spider is an invertebrate."
+    }
+  ],
+  "learning_profile": {
+    "based_on_sessions": 5,
+    "engages_best_when": "Hands-on drawing tasks the student can complete independently",
+    "responds_well_to": "Real-life analogies such as fuel versus building materials",
+    "often_curious_about": "Lilli worked through her healthy plate out loud, narrating her choices, and corrected herself immediately once fruit was pointed out as missing.",
+    "currently_trying": "Answer the reflection question on which Pentagon area she found the most habits or examples for, and give fuller verbal explanations."
+  },
+  "voice_quotes": [
+    {
+      "quote": "Lilli worked through her healthy plate out loud, narrating her choices, and corrected herself immediately once fruit was pointed out as missing.",
+      "session_date": "22 September 2026",
+      "lesson_title": "Nutrition Pentagon Health"
+    },
+    {
+      "quote": "Lilli honestly said that walking silently in a forest sounded boring and sad, which helped turn calm time into a more realistic discussion about different ways to slow down.",
+      "session_date": "26 May 2026",
+      "lesson_title": "Nutrition Healthy Living"
+    },
+    {
+      "quote": "Lilli said the Dichotomous Keys Gizmo was fun once she found the correct activity.",
+      "session_date": "19 May 2026",
+      "lesson_title": "Classification Taxonomy"
+    }
+  ],
+  "sessions": [
+    {
+      "session_date": "22 September 2026",
+      "session_date_iso": "2026-09-22",
+      "lesson_title": "Nutrition Pentagon Health",
+      "subject": "Science",
+      "summary": "Lilli explored Diego's Pentagon of Health, covering nutrition, sleep hygiene, daily movement, stress management, and family and community. She drew a well-balanced healthy plate largely unprompted and sorted items correctly in an interactive simulation across the five categories.",
+      "aim": "Understand that a healthy life depends on five connected areas, not just food, and explain what carbohydrates, proteins, fats, vitamins, minerals, and water each do for the body.",
+      "big_win": "She built a balanced healthy plate mostly unprompted and sorted every item correctly in the Pentagon simulation.",
+      "next_priority": "Answer the reflection question on which Pentagon area she found the most habits or examples for, and give fuller verbal explanations.",
+      "current_unit": "Nutrition and health, through Diego's Pentagon of Health framework (nutrition, sleep hygiene, daily movement, stress management, and family, relationships, and community).",
+      "student_pacing": "On pace. This was Lilli's second-to-last Primary 1 Science lesson, with one lesson remaining to complete the course.",
+      "lesson_engagement": "Polite and attentive, with shorter verbal answers than in some earlier sessions, but clearly more expressive and talkative during the hands-on plate-drawing task, consistent with a pattern already visible in her session history.",
+      "additional_notes": "We ran out of time on the final reflection question in the simulation, asking which Pentagon category she found the most habits or examples for. This is carried into next week's action items and into the plan for her final Primary 1 Science lesson.",
+      "student_voice": "Lilli worked through her healthy plate out loud, narrating her choices, and corrected herself immediately once fruit was pointed out as missing.",
+      "home_support": [
+        "Ask Lilli to explain the difference between what carbohydrates do for the body and what proteins and fats do, then talk through the five Pentagon areas together over a meal."
+      ],
+      "extension_task": "Keep a simple one-day log noting one thing done for each of the five Pentagon of Health areas, to compare with the simulation results next lesson.",
+      "family_friendly_science_explanation": "Diego's Pentagon of Health looks at what a body needs to stay healthy: food as fuel and building material, plus vitamins, minerals, and water, alongside sleep, movement, managing stress, and staying connected to family and community.",
+      "ideas_we_are_refining": "No significant misconceptions. The one gap, forgetting fruit on the first plate, was self-corrected immediately once flagged.",
+      "skills": [
+        {
+          "evidence": "Built a well-balanced healthy plate largely unprompted, including a drink and a sensibly small dessert portion",
+          "source_field": "student_glows"
+        },
+        {
+          "evidence": "Self-corrected immediately once the missing fruit was pointed out",
+          "source_field": "student_glows"
+        },
+        {
+          "evidence": "Sorted every item correctly in the interactive Pentagon of Health simulation",
+          "source_field": "student_glows"
+        },
+        {
+          "evidence": "Built a well-balanced healthy plate largely unprompted",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "Self-corrected immediately once the missing fruit was flagged",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "Sorted every item correctly in the interactive Pentagon simulation",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "Nutrient vocabulary - Practising",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "Proportional plate reasoning - Secure",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "Category sorting - Practising",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "Verbal explanation - Growing",
+          "source_field": "skills_observed"
+        }
+      ],
+      "growing_next": [
+        {
+          "evidence": "Offer fuller verbal answers rather than short one-word responses",
+          "source_field": "student_grows"
+        },
+        {
+          "evidence": "Practise explaining her reasoning aloud, not only producing correct answers",
+          "source_field": "student_grows"
+        },
+        {
+          "evidence": "Build confidence describing the sleep, movement, stress, and community pillars in her own words",
+          "source_field": "student_grows"
+        },
+        {
+          "evidence": "Offer fuller verbal answers rather than short one-word responses",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Practise explaining reasoning aloud, not just producing correct answers",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Build confidence describing the sleep, movement, stress, and community pillars in her own words",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Answer the reflection question on which Pentagon area she found the most habits or examples for, and give fuller verbal explanations.",
+          "source_field": "next_priority"
+        }
+      ],
+      "resources": [
+        {
+          "title": "NHS - The Eatwell Guide",
+          "url": "https://www.nhs.uk/live-well/eat-well/food-guidelines-and-food-labels/the-eatwell-guide/",
+          "note": "Use this together to compare food group proportions with the plate Lilli drew in the lesson."
+        },
+        {
+          "title": "BBC Bitesize - Why do we need a balanced diet?",
+          "url": "https://www.bbc.co.uk/bitesize/articles/zvtnxbk",
+          "note": "A short, student-friendly read on what each nutrient group does for the body."
+        },
+        {
+          "title": "KidsHealth - Sleep and Your Child",
+          "url": "https://kidshealth.org/en/parents/sleep.html",
+          "note": "A family reference on why sleep matters at Lilli's age, given how consistent her routine already is."
+        }
+      ],
+      "assignments_outstanding": [],
+      "raw_session": {
+        "session_date": "22 September 2026",
+        "session_date_iso": "2026-09-22",
+        "lesson_title": "Nutrition Pentagon Health",
+        "summary": "Lilli explored Diego's Pentagon of Health, covering nutrition, sleep hygiene, daily movement, stress management, and family and community. She drew a well-balanced healthy plate largely unprompted and sorted items correctly in an interactive simulation across the five categories.",
+        "aim": "Understand that a healthy life depends on five connected areas, not just food, and explain what carbohydrates, proteins, fats, vitamins, minerals, and water each do for the body.",
+        "headline_insight": "Lilli applied nutrition vocabulary independently when drawing her own healthy plate, needing only one small prompt to add fruit.",
+        "current_focus": "Nutrition and the Pentagon of Health",
+        "big_win": "She built a balanced healthy plate mostly unprompted and sorted every item correctly in the Pentagon simulation.",
+        "next_priority": "Answer the reflection question on which Pentagon area she found the most habits or examples for, and give fuller verbal explanations.",
+        "engagement_status": "Polite and attentive with short verbal answers, becoming noticeably more expressive and talkative during the hands-on plate-drawing task.",
+        "why_this_matters": "The Pentagon of Health gives Lilli a practical framework for connecting nutrition science with everyday choices about sleep, movement, stress, and relationships.",
+        "progress_since_last_update": "Lilli moved from an earlier nutrient-focused lesson into a fuller five-pillar health framework, applying the nutrient roles she already knew to a hands-on plate-drawing task.",
+        "home_support": [
+          "Ask Lilli to explain the difference between what carbohydrates do for the body and what proteins and fats do, then talk through the five Pentagon areas together over a meal."
+        ],
+        "student_voice": "Lilli worked through her healthy plate out loud, narrating her choices, and corrected herself immediately once fruit was pointed out as missing.",
+        "indicators": {
+          "Nutrient roles": "Practising",
+          "Pentagon of Health framework": "Introduced",
+          "Applying nutrition to a real plate": "Secure",
+          "Verbal explanation of reasoning": "Growing"
+        },
+        "upcoming_focus": [
+          "Answer the outstanding reflection question and complete the final Primary 1 Science lesson."
+        ],
+        "strengths": [
+          "Built a well-balanced healthy plate largely unprompted",
+          "Self-corrected immediately once the missing fruit was flagged",
+          "Sorted every item correctly in the interactive Pentagon simulation"
+        ],
+        "areas_for_growth": [
+          "Offer fuller verbal answers rather than short one-word responses",
+          "Practise explaining reasoning aloud, not just producing correct answers",
+          "Build confidence describing the sleep, movement, stress, and community pillars in her own words"
+        ],
+        "next_steps": [
+          "Write a short paragraph giving one real example from her own week for each of the five Pentagon areas.",
+          "Draw a second healthy plate including fruit from the start, with each section labelled.",
+          "Answer the reflection question on which Pentagon category she found the most habits or examples for."
+        ],
+        "skills_observed": [
+          "Nutrient vocabulary - Practising",
+          "Proportional plate reasoning - Secure",
+          "Category sorting - Practising",
+          "Verbal explanation - Growing"
+        ],
+        "engagement": "Lilli was polite and attentive throughout, with shorter verbal answers than in some earlier sessions, but became clearly more expressive and talkative during the plate-drawing task. This mirrors a pattern already visible in her session history, where hands-on or drawing tasks bring out more engagement than pure discussion.",
+        "misconceptions_noticed": "No significant misconceptions. The one gap, forgetting fruit on the first plate, was self-corrected immediately once flagged.",
+        "confidence_level": "Solid with core nutrition vocabulary and organ recall, needing only light prompting to complete the plate and simulation tasks accurately.",
+        "subject_interests": [
+          "Human biology",
+          "Health science",
+          "Sport and movement"
+        ],
+        "other_interests": [
+          "Early morning sports training",
+          "Tennis",
+          "Basketball",
+          "Swimming"
+        ],
+        "lesson_motivation_patterns": "Lilli engages most visibly during hands-on or drawing tasks, becoming more expressive and talkative compared with pure verbal discussion.",
+        "communication_style": "Polite and attentive, with a tendency toward brief spoken answers that mask solid underlying understanding.",
+        "successful_teaching_strategies": [
+          "Hands-on drawing tasks the student can complete independently",
+          "Real-life analogies such as fuel versus building materials",
+          "Interactive sorting simulations linked to the lesson framework"
+        ],
+        "teacher_tips": [
+          "Give Lilli a concrete task to produce, such as a drawing, soon after an explanation.",
+          "Invite fuller verbal answers by asking her to explain her reasoning, not just state the answer.",
+          "Use the five-pillar Pentagon structure to organise future health and biology topics."
+        ],
+        "emotional_notes": "Lilli was relaxed and comfortable throughout, especially once the lesson moved into the plate-drawing and simulation tasks.",
+        "pacing": "On pace. This was Lilli's second-to-last Primary 1 Science lesson, with one lesson remaining to complete the course.",
+        "preferred_learning_mode": "Hands-on and visual, based on her clear shift in engagement during the drawing task.",
+        "adaptation_to_reach_full_potential": "Lilli responds well to tasks she can complete somewhat independently after a short explanation. Future sessions will keep pairing brief explanations with a hands-on task she can drive herself.",
+        "extension_task": "Keep a simple one-day log noting one thing done for each of the five Pentagon of Health areas, to compare with the simulation results next lesson.",
+        "revision_resource_list": [
+          "NHS - The Eatwell Guide",
+          "BBC Bitesize - Why do we need a balanced diet?",
+          "KidsHealth - Sleep and Your Child"
+        ],
+        "next_step_learning_plan": "Review the five Pentagon areas with real examples, complete a second labelled healthy plate, then answer the outstanding reflection question in the final Primary 1 Science lesson.",
+        "what_your_child_is_building_toward": "Lilli is building the ability to apply nutrition and health science to real everyday choices, not just recall vocabulary.",
+        "student_learning_memory": "Lilli is sporty, honest, and conversational, and she consistently engages more visibly during hands-on or drawing tasks than during pure discussion. She benefits from a short explanation followed quickly by a task she can complete herself.",
+        "family_friendly_science_explanation": "Diego's Pentagon of Health looks at what a body needs to stay healthy: food as fuel and building material, plus vitamins, minerals, and water, alongside sleep, movement, managing stress, and staying connected to family and community.",
+        "resources": [
+          {
+            "title": "NHS - The Eatwell Guide",
+            "url": "https://www.nhs.uk/live-well/eat-well/food-guidelines-and-food-labels/the-eatwell-guide/",
+            "note": "Use this together to compare food group proportions with the plate Lilli drew in the lesson."
+          },
+          {
+            "title": "BBC Bitesize - Why do we need a balanced diet?",
+            "url": "https://www.bbc.co.uk/bitesize/articles/zvtnxbk",
+            "note": "A short, student-friendly read on what each nutrient group does for the body."
+          },
+          {
+            "title": "KidsHealth - Sleep and Your Child",
+            "url": "https://kidshealth.org/en/parents/sleep.html",
+            "note": "A family reference on why sleep matters at Lilli's age, given how consistent her routine already is."
+          }
+        ],
+        "student_glows": [
+          "Built a well-balanced healthy plate largely unprompted, including a drink and a sensibly small dessert portion",
+          "Self-corrected immediately once the missing fruit was pointed out",
+          "Sorted every item correctly in the interactive Pentagon of Health simulation"
+        ],
+        "student_grows": [
+          "Offer fuller verbal answers rather than short one-word responses",
+          "Practise explaining her reasoning aloud, not only producing correct answers",
+          "Build confidence describing the sleep, movement, stress, and community pillars in her own words"
+        ],
+        "additional_notes": "We ran out of time on the final reflection question in the simulation, asking which Pentagon category she found the most habits or examples for. This is carried into next week's action items and into the plan for her final Primary 1 Science lesson.",
+        "current_unit": "Nutrition and health, through Diego's Pentagon of Health framework (nutrition, sleep hygiene, daily movement, stress management, and family, relationships, and community).",
+        "student_pacing": "On pace. This was Lilli's second-to-last Primary 1 Science lesson, with one lesson remaining to complete the course.",
+        "lesson_engagement": "Polite and attentive, with shorter verbal answers than in some earlier sessions, but clearly more expressive and talkative during the hands-on plate-drawing task, consistent with a pattern already visible in her session history.",
+        "assignments_outstanding": [],
+        "dashboard_subject": "Science",
+        "participation_patterns": [],
+        "reasoning_patterns": [],
+        "misconceptions": [],
+        "successful_strategies": [],
+        "accuracy_patterns": [],
+        "confidence_patterns": [],
+        "independence_patterns": [],
+        "vocabulary_patterns": [],
+        "skills_focus": [],
+        "communication_patterns": []
+      }
+    },
+    {
+      "session_date": "26 May 2026",
+      "session_date_iso": "2026-05-26",
+      "lesson_title": "Nutrition Healthy Living",
+      "subject": "Science",
+      "summary": "Lilli joined late, with Lisa apologising and asking to continue. The shortened lesson was productive and covered the minimum required ideas on healthy living pillars, nutrients, and the roles of carbohydrates, proteins, fats, vitamins, minerals, water, and fibre.",
+      "aim": "Understand that healthy living is supported by food, movement, sleep, calm time, and community, then identify the main nutrient groups and their roles in the body.",
+      "big_win": "She stayed engaged after the late start and applied the ideas in an interactive healthy-eating activity.",
+      "next_priority": "Connect each nutrient with one clear role in the body using a simple table.",
+      "current_unit": "",
+      "student_pacing": "",
+      "lesson_engagement": "",
+      "additional_notes": "",
+      "student_voice": "Lilli honestly said that walking silently in a forest sounded boring and sad, which helped turn calm time into a more realistic discussion about different ways to slow down.",
+      "home_support": [
+        "Ask Lilli to explain the job of carbohydrates, proteins, fibre, and water, then ask her to design one balanced meal and label the nutrient groups."
+      ],
+      "extension_task": "Design a one-day healthy-living map for a busy sports day, including meals, water, movement, rest, calm time, and one positive community moment.",
+      "family_friendly_science_explanation": "This lesson helped Lilli see that nutrients have different jobs. Carbohydrates mainly give energy, proteins support growth and repair, fats support body functions and energy storage, vitamins and minerals help body processes, water keeps the body balanced, and fibre supports digestion.",
+      "ideas_we_are_refining": "Lilli could recognise carbohydrates but needed support defining them clearly. The lesson also clarified that healthy eating is about balance and body function, not simple good-food and bad-food labels.",
+      "skills": [
+        {
+          "evidence": "Honest communication after a late start",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "Good response to practical examples and activity-based learning",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "Strong existing connection with movement and sport",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "{'skill': 'Scientific vocabulary', 'level': 'Introduced'}",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "{'skill': 'Health reasoning', 'level': 'Introduced'}",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "{'skill': 'Practical decision making', 'level': 'Practised'}",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "{'skill': 'Self-management and organisation', 'level': 'Growing'}",
+          "source_field": "skills_observed"
+        }
+      ],
+      "growing_next": [
+        {
+          "evidence": "Use a separate reminder system for recurring lessons",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Turn recognised nutrient examples into clear definitions",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Explain healthy choices as balanced body-supporting decisions rather than good or bad foods",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Connect each nutrient with one clear role in the body using a simple table.",
+          "source_field": "next_priority"
+        }
+      ],
+      "resources": [
+        {
+          "title": "NHS - The Eatwell Guide",
+          "url": "https://www.nhs.uk/live-well/eat-well/food-guidelines-and-food-labels/the-eatwell-guide/",
+          "note": "Use this to review balanced diet ideas and how food groups work together."
+        },
+        {
+          "title": "British Nutrition Foundation - Nutrients",
+          "url": "https://www.nutrition.org.uk/nutrients/",
+          "note": "Use this to build a simple nutrient-role table."
+        },
+        {
+          "title": "BBC Bitesize - What is a balanced diet?",
+          "url": "https://www.bbc.co.uk/bitesize/topics/zrffr82/articles/zppvv4j",
+          "note": "Use this for a student-friendly review of food groups and balance."
+        },
+        {
+          "title": "KidsHealth - Learning About Calories",
+          "url": "https://kidshealth.org/en/kids/calorie.html",
+          "note": "Use this to review how food gives the body energy."
+        }
+      ],
+      "assignments_outstanding": [],
+      "raw_session": {
+        "session_date": "26 May 2026",
+        "session_date_iso": "2026-05-26",
+        "lesson_title": "Nutrition Healthy Living",
+        "summary": "Lilli joined late, with Lisa apologising and asking to continue. The shortened lesson was productive and covered the minimum required ideas on healthy living pillars, nutrients, and the roles of carbohydrates, proteins, fats, vitamins, minerals, water, and fibre.",
+        "aim": "Understand that healthy living is supported by food, movement, sleep, calm time, and community, then identify the main nutrient groups and their roles in the body.",
+        "headline_insight": "Lilli used a shorter lesson well and connected everyday healthy choices with science vocabulary.",
+        "current_focus": "Nutrients and healthy living",
+        "big_win": "She stayed engaged after the late start and applied the ideas in an interactive healthy-eating activity.",
+        "next_priority": "Connect each nutrient with one clear role in the body using a simple table.",
+        "engagement_status": "Late start, then steady and practical engagement once the lesson moved into healthy-living examples and the activity.",
+        "why_this_matters": "Nutrition and healthy living give Lilli useful science language for choices she meets every day, while also building careful thinking about body systems and balance.",
+        "progress_since_last_update": "Lilli moved from classification of living things into human biology and health science, linking vocabulary with practical choices.",
+        "home_support": [
+          "Ask Lilli to explain the job of carbohydrates, proteins, fibre, and water, then ask her to design one balanced meal and label the nutrient groups."
+        ],
+        "student_voice": "Lilli honestly said that walking silently in a forest sounded boring and sad, which helped turn calm time into a more realistic discussion about different ways to slow down.",
+        "indicators": {
+          "Nutrient vocabulary": "Introduced",
+          "Healthy living pillars": "Introduced",
+          "Practical decision making": "Practised",
+          "Organisation": "Growing"
+        },
+        "upcoming_focus": [
+          "Build a nutrient-role table and practise explaining balanced diet ideas in short written answers."
+        ],
+        "strengths": [
+          "Honest communication after a late start",
+          "Good response to practical examples and activity-based learning",
+          "Strong existing connection with movement and sport"
+        ],
+        "areas_for_growth": [
+          "Use a separate reminder system for recurring lessons",
+          "Turn recognised nutrient examples into clear definitions",
+          "Explain healthy choices as balanced body-supporting decisions rather than good or bad foods"
+        ],
+        "next_steps": [
+          "Make a nutrient and main-job table for the seven key lesson terms.",
+          "Draw a five-part healthy-living map with one small action for the week.",
+          "Design one balanced meal plate and label the nutrient groups."
+        ],
+        "skills_observed": [
+          "{'skill': 'Scientific vocabulary', 'level': 'Introduced'}",
+          "{'skill': 'Health reasoning', 'level': 'Introduced'}",
+          "{'skill': 'Practical decision making', 'level': 'Practised'}",
+          "{'skill': 'Self-management and organisation', 'level': 'Growing'}"
+        ],
+        "engagement": "Lilli joined late but stayed engaged once the session moved into practical healthy-living examples and the interactive activity.",
+        "misconceptions_noticed": "Lilli could recognise carbohydrates but needed support defining them clearly. The lesson also clarified that healthy eating is about balance and body function, not simple good-food and bad-food labels.",
+        "confidence_level": "Steady. Lilli needed timetable support at the start, then asked practical questions and engaged with the game.",
+        "subject_interests": [
+          "Human biology",
+          "Health science",
+          "Sport and movement"
+        ],
+        "other_interests": [
+          "Tennis",
+          "Basketball",
+          "Swimming"
+        ],
+        "lesson_motivation_patterns": "In my observation, Lilli re-engages more quickly when science vocabulary is connected to real choices and interactive tasks.",
+        "communication_style": "Conversational, honest, and willing to say when an idea does not appeal to her.",
+        "successful_teaching_strategies": [
+          "Screen-sharing support for navigation",
+          "Short real-life examples",
+          "Interactive choice-based tasks",
+          "Simple tables linking terms with functions"
+        ],
+        "teacher_tips": [
+          "Start with a quick organisation check if the lesson begins late.",
+          "Use sport and everyday routines to make health science concrete.",
+          "Ask for one-sentence definitions after oral discussion."
+        ],
+        "emotional_notes": "Lilli seemed settled once the timetable issue was resolved and the task became practical.",
+        "pacing": "Shortened lesson, with scope reduced to the minimum required concepts.",
+        "preferred_learning_mode": "Visual, practical, and example-led, based on today's lesson evidence.",
+        "adaptation_to_reach_full_potential": "The lesson scope was reduced after the late start so Lilli could still leave with a complete science frame rather than a rushed set of disconnected facts.",
+        "extension_task": "Design a one-day healthy-living map for a busy sports day, including meals, water, movement, rest, calm time, and one positive community moment.",
+        "revision_resource_list": [
+          "NHS - The Eatwell Guide",
+          "British Nutrition Foundation - Nutrients",
+          "BBC Bitesize - What is a balanced diet?",
+          "KidsHealth - Learning About Calories"
+        ],
+        "next_step_learning_plan": "Review the nutrient roles, build a simple table, then use one meal example to explain balance in plain English.",
+        "what_your_child_is_building_toward": "Lilli is building the ability to explain health science with clear vocabulary and apply it to everyday choices without turning food into judgement.",
+        "student_learning_memory": "Lilli is sporty, honest, conversational, and responsive to practical tasks. She benefits from screen-sharing support when platforms are confusing, then usually re-engages well once the task becomes active.",
+        "family_friendly_science_explanation": "This lesson helped Lilli see that nutrients have different jobs. Carbohydrates mainly give energy, proteins support growth and repair, fats support body functions and energy storage, vitamins and minerals help body processes, water keeps the body balanced, and fibre supports digestion.",
+        "resources": [
+          {
+            "title": "NHS - The Eatwell Guide",
+            "url": "https://www.nhs.uk/live-well/eat-well/food-guidelines-and-food-labels/the-eatwell-guide/",
+            "note": "Use this to review balanced diet ideas and how food groups work together."
+          },
+          {
+            "title": "British Nutrition Foundation - Nutrients",
+            "url": "https://www.nutrition.org.uk/nutrients/",
+            "note": "Use this to build a simple nutrient-role table."
+          },
+          {
+            "title": "BBC Bitesize - What is a balanced diet?",
+            "url": "https://www.bbc.co.uk/bitesize/topics/zrffr82/articles/zppvv4j",
+            "note": "Use this for a student-friendly review of food groups and balance."
+          },
+          {
+            "title": "KidsHealth - Learning About Calories",
+            "url": "https://kidshealth.org/en/kids/calorie.html",
+            "note": "Use this to review how food gives the body energy."
+          }
+        ],
+        "independence_patterns": [],
+        "misconceptions": [],
+        "communication_patterns": [],
+        "student_glows": [],
+        "accuracy_patterns": [],
+        "vocabulary_patterns": [],
+        "confidence_patterns": [],
+        "reasoning_patterns": [],
+        "successful_strategies": [],
+        "skills_focus": [],
+        "participation_patterns": [],
+        "student_grows": [],
+        "additional_notes": "",
+        "current_unit": "",
+        "student_pacing": "",
+        "lesson_engagement": "",
+        "assignments_outstanding": [],
+        "dashboard_subject": "Science"
+      }
+    },
+    {
+      "session_date": "19 May 2026",
+      "session_date_iso": "2026-05-19",
+      "lesson_title": "Classification Taxonomy",
+      "subject": "Science",
+      "summary": "Lilli explored taxonomy, classification groups, vertebrates and invertebrates, vascular and non-vascular plants, and the use of dichotomous keys to identify organisms.",
+      "aim": "Understand why scientists classify living organisms, how broad groups narrow down toward a species, and how dichotomous keys help identify organisms using observable traits.",
+      "big_win": "She correctly sorted a strong set of vertebrate and invertebrate examples and reasoned through why a spider is an invertebrate.",
+      "next_priority": "Build clear written classification pathways from broad groups to species.",
+      "current_unit": "",
+      "student_pacing": "",
+      "lesson_engagement": "",
+      "additional_notes": "",
+      "student_voice": "Lilli said the Dichotomous Keys Gizmo was fun once she found the correct activity.",
+      "home_support": [
+        "Ask Lilli to explain the difference between a vertebrate and an invertebrate, then ask her to classify one familiar animal from broad group to species if she can find a reliable example."
+      ],
+      "extension_task": "",
+      "family_friendly_science_explanation": "",
+      "ideas_we_are_refining": "",
+      "skills": [
+        {
+          "evidence": "Honest communication after a late start",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "Good example generation during the vertebrate and invertebrate task",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "Positive response to the Dichotomous Keys Gizmo",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "{'skill': 'Classification', 'level': 'Introduced'}",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "{'skill': 'Logical sorting', 'level': 'Practised'}",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "{'skill': 'Scientific vocabulary', 'level': 'Growing'}",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "{'skill': 'Interactive simulation use', 'level': 'Growing'}",
+          "source_field": "skills_observed"
+        }
+      ],
+      "growing_next": [
+        {
+          "evidence": "Use precise scientific wording for humans as animals in biology",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Turn spoken reasoning into written classification pathways",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Record key vocabulary clearly in notes during vocabulary-heavy lessons",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Build clear written classification pathways from broad groups to species.",
+          "source_field": "next_priority"
+        }
+      ],
+      "resources": [
+        {
+          "title": "Natural History Museum - What is taxonomy?",
+          "url": "https://www.nhm.ac.uk/discover/what-is-taxonomy.html/",
+          "note": "Use this to review what taxonomy means and why scientists classify living things."
+        },
+        {
+          "title": "ExploreLearning Gizmos - Dichotomous Keys",
+          "url": "https://gizmos.explorelearning.com/find-gizmos/launch-gizmo?resourceId=1047",
+          "note": "Use this to practise identifying organisms by following paired choices."
+        },
+        {
+          "title": "CK-12 / LibreTexts - Animal Classification",
+          "url": "https://bio.libretexts.org/TextMaps/Map%3A_Introductory_Biology_%28CK-12%29/10%3A_Animals/10.2%3A_Animal_Classification",
+          "note": "Use this to revise vertebrates and invertebrates."
+        }
+      ],
+      "assignments_outstanding": [],
+      "raw_session": {
+        "session_date": "19 May 2026",
+        "session_date_iso": "2026-05-19",
+        "lesson_title": "Classification Taxonomy",
+        "summary": "Lilli explored taxonomy, classification groups, vertebrates and invertebrates, vascular and non-vascular plants, and the use of dichotomous keys to identify organisms.",
+        "aim": "Understand why scientists classify living organisms, how broad groups narrow down toward a species, and how dichotomous keys help identify organisms using observable traits.",
+        "headline_insight": "Lilli began turning classification from a list of names into a reasoning process based on traits and increasingly specific groups.",
+        "current_focus": "Classification and taxonomy",
+        "big_win": "She correctly sorted a strong set of vertebrate and invertebrate examples and reasoned through why a spider is an invertebrate.",
+        "next_priority": "Build clear written classification pathways from broad groups to species.",
+        "engagement_status": "Settled well after a busy exam day and became more engaged when the lesson moved into sorting and the Dichotomous Keys Gizmo.",
+        "why_this_matters": "Classification is a foundation for later biology because it helps students compare organisms, identify species, and understand relationships between living things.",
+        "progress_since_last_update": "Lilli moved from cell structure into organism-level classification, linking biology vocabulary with logical grouping and observable traits.",
+        "home_support": [
+          "Ask Lilli to explain the difference between a vertebrate and an invertebrate, then ask her to classify one familiar animal from broad group to species if she can find a reliable example."
+        ],
+        "student_voice": "Lilli said the Dichotomous Keys Gizmo was fun once she found the correct activity.",
+        "indicators": {
+          "Taxonomy vocabulary": "Introduced",
+          "Vertebrate sorting": "Practised",
+          "Classification reasoning": "Growing",
+          "Dichotomous keys": "Introduced"
+        },
+        "upcoming_focus": [
+          "Use short tables and labelled pathways to make classification vocabulary easier to recall."
+        ],
+        "strengths": [
+          "Honest communication after a late start",
+          "Good example generation during the vertebrate and invertebrate task",
+          "Positive response to the Dichotomous Keys Gizmo"
+        ],
+        "areas_for_growth": [
+          "Use precise scientific wording for humans as animals in biology",
+          "Turn spoken reasoning into written classification pathways",
+          "Record key vocabulary clearly in notes during vocabulary-heavy lessons"
+        ],
+        "next_steps": [
+          "Make a two-column vertebrate and invertebrate table with five examples in each column.",
+          "Write one classification pathway for a chosen animal using at least five levels.",
+          "Complete one organism in the Dichotomous Keys Gizmo and list three paired choices used."
+        ],
+        "skills_observed": [
+          "{'skill': 'Classification', 'level': 'Introduced'}",
+          "{'skill': 'Logical sorting', 'level': 'Practised'}",
+          "{'skill': 'Scientific vocabulary', 'level': 'Growing'}",
+          "{'skill': 'Interactive simulation use', 'level': 'Growing'}"
+        ],
+        "engagement": "Lilli began the session after a busy exam schedule, but she settled into the topic and showed stronger engagement when she could sort examples and use an interactive identification tool.",
+        "resources": [
+          {
+            "title": "Natural History Museum - What is taxonomy?",
+            "url": "https://www.nhm.ac.uk/discover/what-is-taxonomy.html/",
+            "note": "Use this to review what taxonomy means and why scientists classify living things."
+          },
+          {
+            "title": "ExploreLearning Gizmos - Dichotomous Keys",
+            "url": "https://gizmos.explorelearning.com/find-gizmos/launch-gizmo?resourceId=1047",
+            "note": "Use this to practise identifying organisms by following paired choices."
+          },
+          {
+            "title": "CK-12 / LibreTexts - Animal Classification",
+            "url": "https://bio.libretexts.org/TextMaps/Map%3A_Introductory_Biology_%28CK-12%29/10%3A_Animals/10.2%3A_Animal_Classification",
+            "note": "Use this to revise vertebrates and invertebrates."
+          }
+        ],
+        "independence_patterns": [],
+        "misconceptions": [],
+        "communication_patterns": [],
+        "student_glows": [],
+        "accuracy_patterns": [],
+        "vocabulary_patterns": [],
+        "confidence_patterns": [],
+        "reasoning_patterns": [],
+        "successful_strategies": [],
+        "skills_focus": [],
+        "participation_patterns": [],
+        "student_grows": [],
+        "additional_notes": "",
+        "current_unit": "",
+        "student_pacing": "",
+        "lesson_engagement": "",
+        "assignments_outstanding": [],
+        "dashboard_subject": "Science"
+      }
+    },
+    {
+      "session_date": "5 May 2026",
+      "session_date_iso": "2026-05-05",
+      "lesson_title": "Cells Plant Animal",
+      "subject": "Science",
+      "summary": "Lilli explored cells as the microscopic building blocks of living organisms, compared animal and plant cells, and practised linking cell structures with their functions.",
+      "aim": "Understand that living organisms are made of microscopic cells, then compare animal and plant cells by naming important structures and explaining what they do.",
+      "big_win": "She remembered chloroplasts from earlier learning and identified them again during the lesson check.",
+      "next_priority": "Turn cell vocabulary into a clear comparison table with accurate functions.",
+      "current_unit": "",
+      "student_pacing": "",
+      "lesson_engagement": "",
+      "additional_notes": "",
+      "student_voice": "Lilli said she remembered chloroplasts from an earlier course and explained that energy affects how much attention she can give to a topic.",
+      "home_support": [
+        "Ask Lilli to explain why humans are animals in biology and to name one job each for the nucleus, mitochondria, chloroplast, and cell wall."
+      ],
+      "extension_task": "",
+      "family_friendly_science_explanation": "",
+      "ideas_we_are_refining": "",
+      "skills": [
+        {
+          "evidence": "Honest communication at the start of the lesson",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "Good memory link to earlier work on chloroplasts",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "Curiosity with simulations and visual biology tools",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "{'skill': 'Biology vocabulary', 'level': 'Introduced'}",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "{'skill': 'Classification thinking', 'level': 'Practised'}",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "{'skill': 'Interactive simulation use', 'level': 'Growing'}",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "{'skill': 'Scientific explanation', 'level': 'Growing'}",
+          "source_field": "skills_observed"
+        }
+      ],
+      "growing_next": [
+        {
+          "evidence": "Use biological categories confidently, such as humans being animals",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Separate similar cell structures by function",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Write concise definitions instead of relying only on recognition",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Turn cell vocabulary into a clear comparison table with accurate functions.",
+          "source_field": "next_priority"
+        }
+      ],
+      "resources": [
+        {
+          "title": "Learn.Genetics - Cells",
+          "url": "https://learn.genetics.utah.edu/content/cells/",
+          "note": "Use this as a visual starting point for cells and their roles in living organisms."
+        },
+        {
+          "title": "Learn.Genetics - Cell Size and Scale",
+          "url": "https://learn.genetics.utah.edu/content/cells/scale/",
+          "note": "Use the slider to compare cells with familiar objects and smaller structures."
+        },
+        {
+          "title": "Khan Academy - Comparing Animal and Plant Cells",
+          "url": "https://www.khanacademy.org/science/ms-biology/x0c5bb03129646fd6%3Acells-and-organisms/x0c5bb03129646fd6%3Acell-parts-and-functions/v/comparing-animal-and-plant-cells",
+          "note": "Review the main similarities and differences between animal and plant cells."
+        }
+      ],
+      "assignments_outstanding": [],
+      "raw_session": {
+        "session_date": "5 May 2026",
+        "session_date_iso": "2026-05-05",
+        "lesson_title": "Cells Plant Animal",
+        "summary": "Lilli explored cells as the microscopic building blocks of living organisms, compared animal and plant cells, and practised linking cell structures with their functions.",
+        "aim": "Understand that living organisms are made of microscopic cells, then compare animal and plant cells by naming important structures and explaining what they do.",
+        "headline_insight": "Lilli connected new cell vocabulary with earlier plant-cell memories and began organising the difference between everyday categories and biological categories.",
+        "current_focus": "Cell structure and function",
+        "big_win": "She remembered chloroplasts from earlier learning and identified them again during the lesson check.",
+        "next_priority": "Turn cell vocabulary into a clear comparison table with accurate functions.",
+        "engagement_status": "Honest, conversational, and increasingly focused once the lesson began",
+        "why_this_matters": "Cells are a foundation topic for future biology, including tissues, organs, photosynthesis, respiration, growth, repair, and classification.",
+        "progress_since_last_update": "Lilli moved from fossils and living-process evidence into the microscopic structure of organisms, strengthening the bridge between survival needs and cell biology.",
+        "home_support": [
+          "Ask Lilli to explain why humans are animals in biology and to name one job each for the nucleus, mitochondria, chloroplast, and cell wall."
+        ],
+        "student_voice": "Lilli said she remembered chloroplasts from an earlier course and explained that energy affects how much attention she can give to a topic.",
+        "indicators": {
+          "Cell basics": "Introduced",
+          "Plant and animal comparison": "Practised",
+          "Microscopic scale": "Growing",
+          "Precise explanations": "Next focus"
+        },
+        "upcoming_focus": [
+          "Secure cell-part functions and use accurate science vocabulary in short written answers."
+        ],
+        "strengths": [
+          "Honest communication at the start of the lesson",
+          "Good memory link to earlier work on chloroplasts",
+          "Curiosity with simulations and visual biology tools"
+        ],
+        "areas_for_growth": [
+          "Use biological categories confidently, such as humans being animals",
+          "Separate similar cell structures by function",
+          "Write concise definitions instead of relying only on recognition"
+        ],
+        "next_steps": [
+          "Create a cell-part function table with seven key structures.",
+          "Write one sentence explaining why humans are animals in biology.",
+          "Use the Cell Size and Scale interactive to order three examples from largest to smallest."
+        ],
+        "skills_observed": [
+          "{'skill': 'Biology vocabulary', 'level': 'Introduced'}",
+          "{'skill': 'Classification thinking', 'level': 'Practised'}",
+          "{'skill': 'Interactive simulation use', 'level': 'Growing'}",
+          "{'skill': 'Scientific explanation', 'level': 'Growing'}"
+        ],
+        "engagement": "Lilli was honest about being late, settled into discussion well, and became more focused when the lesson moved into visual simulations and familiar plant-cell vocabulary.",
+        "resources": [
+          {
+            "title": "Learn.Genetics - Cells",
+            "url": "https://learn.genetics.utah.edu/content/cells/",
+            "note": "Use this as a visual starting point for cells and their roles in living organisms."
+          },
+          {
+            "title": "Learn.Genetics - Cell Size and Scale",
+            "url": "https://learn.genetics.utah.edu/content/cells/scale/",
+            "note": "Use the slider to compare cells with familiar objects and smaller structures."
+          },
+          {
+            "title": "Khan Academy - Comparing Animal and Plant Cells",
+            "url": "https://www.khanacademy.org/science/ms-biology/x0c5bb03129646fd6%3Acells-and-organisms/x0c5bb03129646fd6%3Acell-parts-and-functions/v/comparing-animal-and-plant-cells",
+            "note": "Review the main similarities and differences between animal and plant cells."
+          }
+        ],
+        "independence_patterns": [],
+        "misconceptions": [],
+        "communication_patterns": [],
+        "student_glows": [],
+        "accuracy_patterns": [],
+        "vocabulary_patterns": [],
+        "confidence_patterns": [],
+        "reasoning_patterns": [],
+        "successful_strategies": [],
+        "skills_focus": [],
+        "participation_patterns": [],
+        "student_grows": [],
+        "additional_notes": "",
+        "current_unit": "",
+        "student_pacing": "",
+        "lesson_engagement": "",
+        "assignments_outstanding": [],
+        "dashboard_subject": "Science"
+      }
+    },
+    {
+      "session_date": "28 April 2026",
+      "session_date_iso": "2026-04-28",
+      "lesson_title": "Fossils Early Life",
+      "subject": "Science",
+      "summary": "Lilli restarted science after a long break by exploring fossils, early Earth, rock layers, hydrothermal vents, photosynthesis, respiration, and the Plants and Snails Gizmo.",
+      "aim": "Understand how fossils and rock layers help scientists reconstruct the history of life, then connect early life with photosynthesis, oxygen, carbon dioxide, and survival needs.",
+      "big_win": "She recognised how the fossil activity became easier once she found the pattern in the layers.",
+      "next_priority": "Turn spoken understanding into clear written explanations.",
+      "current_unit": "",
+      "student_pacing": "",
+      "lesson_engagement": "",
+      "additional_notes": "",
+      "student_voice": "Lilli said the fossil activity became easy once she understood how to do it.",
+      "home_support": [
+        "Ask Lilli to explain why lower rock layers are usually older and what plants do differently in light and darkness."
+      ],
+      "extension_task": "",
+      "family_friendly_science_explanation": "",
+      "ideas_we_are_refining": "",
+      "skills": [
+        {
+          "evidence": "Pattern recognition once the task clicked",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "Good clarification questions",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "Humour and persistence during technical setup",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "{'skill': 'Scientific evidence', 'level': 'Introduced'}",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "{'skill': 'Pattern finding', 'level': 'Practised'}",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "{'skill': 'Simulation use', 'level': 'Growing'}",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "{'skill': 'Independent learning setup', 'level': 'Growing'}",
+          "source_field": "skills_observed"
+        }
+      ],
+      "growing_next": [
+        {
+          "evidence": "Use precise science vocabulary in written answers",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Organise long timelines into simple sequences",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Explain Gizmo results using evidence",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Turn spoken understanding into clear written explanations.",
+          "source_field": "next_priority"
+        }
+      ],
+      "resources": [
+        {
+          "title": "USGS - Age of the Earth",
+          "url": "https://pubs.usgs.gov/gip/geotime/age.html",
+          "note": "Review Earth's age and how scientists estimate it."
+        },
+        {
+          "title": "National Geographic Education - Superposition",
+          "url": "https://education.nationalgeographic.org/resource/superposition/",
+          "note": "Practise why lower rock layers are usually older."
+        },
+        {
+          "title": "ExploreLearning Gizmos - Plants and Snails",
+          "url": "https://gizmos.explorelearning.com/find-gizmos/lesson-info?resourceID=641",
+          "note": "Revisit the simulation used in the lesson."
+        }
+      ],
+      "assignments_outstanding": [],
+      "raw_session": {
+        "session_date": "28 April 2026",
+        "session_date_iso": "2026-04-28",
+        "lesson_title": "Fossils Early Life",
+        "summary": "Lilli restarted science after a long break by exploring fossils, early Earth, rock layers, hydrothermal vents, photosynthesis, respiration, and the Plants and Snails Gizmo.",
+        "aim": "Understand how fossils and rock layers help scientists reconstruct the history of life, then connect early life with photosynthesis, oxygen, carbon dioxide, and survival needs.",
+        "headline_insight": "Lilli moved from uncertainty to pattern recognition during the fossil-ordering task.",
+        "current_focus": "Fossil evidence and gas cycles",
+        "big_win": "She recognised how the fossil activity became easier once she found the pattern in the layers.",
+        "next_priority": "Turn spoken understanding into clear written explanations.",
+        "engagement_status": "Settling back in with humour and persistence",
+        "why_this_matters": "This gives Lilli a foundation for biology topics where evidence, timelines, and living processes connect.",
+        "progress_since_last_update": "This is Lilli's first dashboard entry in the current report package system, so it sets the baseline for future growth.",
+        "home_support": [
+          "Ask Lilli to explain why lower rock layers are usually older and what plants do differently in light and darkness."
+        ],
+        "student_voice": "Lilli said the fossil activity became easy once she understood how to do it.",
+        "indicators": {
+          "Evidence from fossils": "Introduced",
+          "Rock-layer reasoning": "Practised",
+          "Simulation independence": "Growing",
+          "Scientific explanation": "Next focus"
+        },
+        "upcoming_focus": [
+          "Clear explanations of fossils, photosynthesis, respiration, oxygen, and carbon dioxide."
+        ],
+        "strengths": [
+          "Pattern recognition once the task clicked",
+          "Good clarification questions",
+          "Humour and persistence during technical setup"
+        ],
+        "areas_for_growth": [
+          "Use precise science vocabulary in written answers",
+          "Organise long timelines into simple sequences",
+          "Explain Gizmo results using evidence"
+        ],
+        "next_steps": [
+          "Create a two-column fossil evidence table with three examples.",
+          "Write one sentence about older rock layers and one 'How might scientists know...' question.",
+          "Write three bullet points about plants, snails, light, oxygen, and carbon dioxide."
+        ],
+        "skills_observed": [
+          "{'skill': 'Scientific evidence', 'level': 'Introduced'}",
+          "{'skill': 'Pattern finding', 'level': 'Practised'}",
+          "{'skill': 'Simulation use', 'level': 'Growing'}",
+          "{'skill': 'Independent learning setup', 'level': 'Growing'}"
+        ],
+        "engagement": "Lilli was conversational, playful, and able to settle into the task after the new laptop setup.",
+        "resources": [
+          {
+            "title": "USGS - Age of the Earth",
+            "url": "https://pubs.usgs.gov/gip/geotime/age.html",
+            "note": "Review Earth's age and how scientists estimate it."
+          },
+          {
+            "title": "National Geographic Education - Superposition",
+            "url": "https://education.nationalgeographic.org/resource/superposition/",
+            "note": "Practise why lower rock layers are usually older."
+          },
+          {
+            "title": "ExploreLearning Gizmos - Plants and Snails",
+            "url": "https://gizmos.explorelearning.com/find-gizmos/lesson-info?resourceID=641",
+            "note": "Revisit the simulation used in the lesson."
+          }
+        ],
+        "independence_patterns": [],
+        "misconceptions": [],
+        "communication_patterns": [],
+        "student_glows": [],
+        "accuracy_patterns": [],
+        "vocabulary_patterns": [],
+        "confidence_patterns": [],
+        "reasoning_patterns": [],
+        "successful_strategies": [],
+        "skills_focus": [],
+        "participation_patterns": [],
+        "student_grows": [],
+        "additional_notes": "",
+        "current_unit": "",
+        "student_pacing": "",
+        "lesson_engagement": "",
+        "assignments_outstanding": [],
+        "dashboard_subject": "Science"
+      }
+    }
+  ]
+}</script>
+<script>
+const DISCLAIMER = "This is a voluntary teaching resource created by Mr. Guevara to add as much value as possible for families and students. It is not a requirement of Crimson Global Academy, and other teachers may not provide anything similar — this is not part of what CGA officially offers. Please refer to the Learning Lab as the official Crimson Global Academy resource, where assignments, grades, deadlines, and formal progress reports are provided. The information here is supplementary and is not part of any official session report or progress report sent by the school.";
+
+const LINKEDIN_URL = "https://www.linkedin.com/in/diego-urrutia-guevara-150bb641/";
+
+const data = JSON.parse(document.getElementById('dashboard-v2-data').textContent);
+const name = data.student_first_name || "the student";
+
+function esc(s){
+  return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function footerHtml(){
+  return `<footer class="disclaimer">${esc(DISCLAIMER)}</footer>`;
+}
+
+const TARGET_ICON = `<svg class="target-icon" viewBox="0 0 64 64" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="32" cy="32" r="27" fill="none" stroke="currentColor" stroke-width="4" opacity=".35"/>
+  <circle cx="32" cy="32" r="15" fill="none" stroke="currentColor" stroke-width="4" opacity=".55"/>
+  <circle cx="32" cy="32" r="4" fill="currentColor"/>
+</svg>`;
+
+function eyebrow(label){
+  return `<div class="eyebrow-label">${TARGET_ICON}${esc(label)}</div>`;
+}
+
+/* ---------------- OVERVIEW TAB ---------------- */
+function renderOverview(){
+  const s = data.stats || {};
+  const latest = data.sessions[0] || {};
+  const quotes = data.voice_quotes || [];
+
+  let html = `
+    ${eyebrow("Overview")}
+    <h2 class="panel-title">Overview</h2>
+    <p class="panel-sub">A quick snapshot of ${esc(name)}'s learning journey so far.</p>
+    <div class="stat-row">
+      <div class="stat"><div class="num">${s.sessions_logged ?? 0}</div><div class="label">Sessions logged</div></div>
+      <div class="stat"><div class="num">${s.distinct_skills_tried ?? 0}</div><div class="label">Distinct skills tried</div></div>
+      <div class="stat"><div class="num">${s.milestones_hit ?? 0}</div><div class="label">Milestones hit</div></div>
+    </div>
+    <div class="focus-row">
+      <div class="focus-card win"><div class="eyebrow">Big win</div>${esc(latest.big_win || "")}</div>
+      <div class="focus-card tonight"><div class="eyebrow">Try tonight</div>${esc((latest.home_support && latest.home_support[0]) || "")}</div>
+      <div class="focus-card edge"><div class="eyebrow">Growing edge</div>${esc((latest.growing_next && latest.growing_next[0] && latest.growing_next[0].evidence) || "")}</div>
+    </div>
+    <div class="card">
+      <h3>Since we last looked</h3>
+      <p>${esc(latest.raw_session && latest.raw_session.progress_since_last_update && Array.isArray(latest.raw_session.progress_since_last_update) ? latest.raw_session.progress_since_last_update[0] : (latest.raw_session ? latest.raw_session.progress_since_last_update : "") || "")}</p>
+    </div>
+    <div class="card">
+      <h3>What this lesson was about</h3>
+      <p>${esc(latest.family_friendly_science_explanation || latest.summary || "")}</p>
+    </div>
+    <div class="card">
+      <h3>In ${esc(name)}'s own words</h3>
+      ${quotes.map(q => `
+        <div class="quote-card">
+          <blockquote>&ldquo;${esc(q.quote)}&rdquo;</blockquote>
+          <div class="interp">From "${esc(q.lesson_title)}" (${esc(q.session_date)}) — this shows ${esc(name)} thinking in his own terms, not just repeating a definition.</div>
+        </div>`).join("")}
+    </div>
+  `;
+  document.getElementById('tab-overview').innerHTML = html + footerHtml();
+}
+
+/* ---------------- PROGRESS TAB (chart) ---------------- */
+const STAGE_Y = {Emerging: 3, Developing: 2, Growing: 1, Secure: 0};
+// Line colours pulled from the Discovery Lab "earth" theme's accent/signal
+// family (greens and rust-orange), so threads read as one palette with the
+// rest of the dashboard rather than an unrelated colour set.
+const STAGE_COLORS = {
+  "Hardware & software vocabulary": "#40634C",
+  "Independent research & problem solving": "#517B5E",
+  "Programming & coding": "#B5551F",
+  "Digital safety & responsible use": "#A66B00",
+};
+const LINE_COL = "#1D211C24";
+const INK2 = "#4A5148";
+const INK3 = "#757C72";
+
+function shortDate(iso){
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString("en-GB", {day:"numeric", month:"short"});
+}
+
+function buildChartSVG(threads){
+  const W = 780, H = 300, padL = 140, padR = 20, padT = 20, padB = 46;
+  const allDates = [...new Set(Object.values(threads).flat().map(p => p.session_date_iso))].sort();
+  const x = d => {
+    const idx = allDates.indexOf(d);
+    const n = Math.max(allDates.length - 1, 1);
+    return padL + (idx / n) * (W - padL - padR);
+  };
+  const rowH = (H - padT - padB) / 4;
+  const y = stage => padT + STAGE_Y[stage] * rowH + rowH / 2;
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="var(--font-ui),sans-serif">`;
+
+  // Stage rows: qualitative stage NAMES are the only y-axis labels, never numbers.
+  ["Emerging","Developing","Growing","Secure"].forEach((stage, i) => {
+    const yy = padT + i * rowH + rowH / 2;
+    svg += `<line x1="${padL}" y1="${yy}" x2="${W - padR}" y2="${yy}" stroke="${LINE_COL}" stroke-width="1" stroke-dasharray="3 5"/>`;
+    svg += `<text x="8" y="${yy + 4}" font-size="12" fill="${INK2}" font-weight="700">${stage}</text>`;
+  });
+
+  // Dated x-axis: a step line under the plot with a dashed tick per session date.
+  const axisY = padT + 4 * rowH;
+  svg += `<line x1="${padL}" y1="${axisY}" x2="${W - padR}" y2="${axisY}" stroke="${LINE_COL}" stroke-width="1"/>`;
+  allDates.forEach(d => {
+    const px = x(d);
+    svg += `<line x1="${px}" y1="${axisY}" x2="${px}" y2="${axisY + 6}" stroke="${LINE_COL}" stroke-width="1" stroke-dasharray="2 3"/>`;
+    svg += `<text x="${px}" y="${axisY + 22}" font-size="10" fill="${INK3}" text-anchor="middle" transform="rotate(0 ${px} ${axisY+22})" font-family="var(--font-data),monospace">${shortDate(d)}</text>`;
+  });
+
+  let pointId = 0;
+  const points = [];
+  Object.entries(threads).forEach(([threadName, pts]) => {
+    const color = STAGE_COLORS[threadName] || "#40634C";
+    const sorted = [...pts].sort((a,b) => a.session_date_iso.localeCompare(b.session_date_iso));
+    // Step line (not a smooth diagonal): holds the current stage until the
+    // next dated observation, which better reflects a qualitative plateau.
+    let path = "";
+    sorted.forEach((p, i) => {
+      const px = x(p.session_date_iso), py = y(p.stage);
+      if (i === 0) { path += `M${px},${py} `; }
+      else {
+        const prevPx = x(sorted[i-1].session_date_iso);
+        path += `L${px},${y(sorted[i-1].stage)} L${px},${py} `;
+      }
+    });
+    svg += `<path d="${path.trim()}" fill="none" stroke="${color}" stroke-width="2.5" opacity="0.85"/>`;
+    sorted.forEach(p => {
+      const px = x(p.session_date_iso), py = y(p.stage);
+      const id = "pt" + (pointId++);
+      points.push({id, threadName, ...p});
+      svg += `<circle cx="${px}" cy="${py}" r="5" fill="${color}" stroke="${'#FBF9F3'}" stroke-width="1.5" style="cursor:pointer" onclick="showEvidence('${id}')"/>`;
+    });
+  });
+  svg += `</svg>`;
+  window.__chartPoints = points;
+  return svg;
+}
+
+function showEvidence(id){
+  const p = (window.__chartPoints || []).find(pt => pt.id === id);
+  const el = document.getElementById('evidence-pop');
+  if (!el || !p) return;
+  el.innerHTML = `<strong>${esc(p.threadName)} — ${esc(p.stage)}</strong> (${esc(p.session_date)}, "${esc(p.lesson_title)}")<br>${esc(p.evidence)}`;
+  el.classList.add('show');
+  el.scrollIntoView({behavior:"smooth", block:"nearest"});
+}
+
+function renderProgress(){
+  const threads = data.skill_threads || {};
+  const lp = data.learning_profile || {};
+  const milestones = data.milestones || [];
+
+  let legend = Object.keys(threads).map(k =>
+    `<span><span class="legend-dot" style="background:${STAGE_COLORS[k] || '#2F5871'}"></span>${esc(k)}</span>`
+  ).join(" &nbsp; ");
+
+  let html = `
+    ${eyebrow("Progress")}
+    <h2 class="panel-title">Progress</h2>
+    <p class="panel-sub">These are Mr. Guevara's qualitative professional observations from lessons, not a score or grade. Click any point on the chart for the evidence it is drawn from.</p>
+    <div class="card chart-card">
+      <h3>Skills over time (qualitative stages)</h3>
+      ${buildChartSVG(threads)}
+      <div class="chart-legend">${legend}</div>
+      <div id="evidence-pop" class="evidence-pop"></div>
+    </div>
+    <div class="card">
+      <h3>Moments that mattered</h3>
+      ${milestones.map(m => `
+        <div class="milestone">
+          <div class="dot"></div>
+          <div>
+            <div class="date">${esc(m.session_date)}</div>
+            <strong>${esc(m.title)}</strong>
+            <div>${esc(m.detail)}</div>
+          </div>
+        </div>`).join("")}
+    </div>
+    <div class="card">
+      <h3>Early learning profile</h3>
+      <div class="basis-note">Based on ${lp.based_on_sessions ?? 0} sessions so far — this will keep evolving as more sessions are logged.</div>
+      <div class="profile-grid" style="margin-top:10px;">
+        <div class="item"><div class="k">Engages best when</div>${esc(lp.engages_best_when || "")}</div>
+        <div class="item"><div class="k">Responds well to</div>${esc(lp.responds_well_to || "")}</div>
+        <div class="item"><div class="k">Often curious about</div>${esc(lp.often_curious_about || "")}</div>
+        <div class="item"><div class="k">Currently trying</div>${esc(lp.currently_trying || "")}</div>
+      </div>
+    </div>
+  `;
+  document.getElementById('tab-progress').innerHTML = html + footerHtml();
+}
+
+/* ---------------- HELP AT HOME TAB ---------------- */
+function renderHelpAtHome(){
+  const latest = data.sessions[0] || {};
+  const askQuestions = (latest.raw_session && latest.raw_session.next_steps) || [];
+  let html = `
+    ${eyebrow("Help at Home")}
+    <h2 class="panel-title">Help at Home</h2>
+    <p class="panel-sub">This is optional and conversational, not homework — a few ideas if a moment naturally comes up at home.</p>
+    <div class="card">
+      <h3>Ask ${esc(name)}</h3>
+      <ul class="plain">
+        ${askQuestions.slice(0,3).map(q => `<li>${esc(q)}</li>`).join("")}
+      </ul>
+    </div>
+    <div class="card">
+      <h3>This week's home-support idea</h3>
+      <ul class="plain">${(latest.home_support || []).map(h => `<li>${esc(h)}</li>`).join("")}</ul>
+    </div>
+    <div class="card">
+      <h3>Resources from the latest session</h3>
+      ${(latest.resources || []).map(r => `
+        <div class="resource-link">
+          <a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a>
+          <div class="note">${esc(r.note)}</div>
+        </div>`).join("")}
+    </div>
+  `;
+  document.getElementById('tab-helpathome').innerHTML = html + footerHtml();
+}
+
+/* ---------------- SESSIONS TAB ---------------- */
+function renderSessions(){
+  const sessions = data.sessions || [];
+  let html = `
+    ${eyebrow("Sessions")}
+    <h2 class="panel-title">Sessions</h2>
+    <p class="panel-sub">Full chronological session history, newest first. Click any session to expand it.</p>
+  `;
+  sessions.forEach(s => {
+    html += `
+      <details class="session">
+        <summary>${esc(s.lesson_title)}<span class="sdate">${esc(s.session_date)}</span></summary>
+        <div class="session-body">
+          <h4>Summary</h4><p>${esc(s.summary)}</p>
+          <h4>Strengths / glows</h4>
+          <ul class="plain">${(s.skills || []).map(sk => `<li>${esc(sk.evidence)}</li>`).join("")}</ul>
+          <h4>Growing next</h4>
+          <ul class="plain">${(s.growing_next || []).map(g => `<li>${esc(g.evidence)}</li>`).join("")}</ul>
+          <h4>Resources</h4>
+          ${(s.resources || []).map(r => `<div class="resource-link"><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a><div class="note">${esc(r.note)}</div></div>`).join("")}
+        </div>
+      </details>
+    `;
+  });
+  document.getElementById('tab-sessions').innerHTML = html + footerHtml();
+}
+
+/* ---------------- ABOUT TAB ---------------- */
+function renderAbout(){
+  const chips = ["Primary &amp; Secondary","IGCSE &middot; A-Level &middot; US Diploma","UK &middot; Spain &middot; New Zealand","Students on 4 continents","Teacher training"];
+  const html = `
+    ${eyebrow("About")}
+    <h2 class="panel-title">About Mr. Guevara</h2>
+    <p class="panel-sub">The teacher behind this dashboard.</p>
+    <div class="card about-hero">
+      ${eyebrow("The teacher behind this dashboard")}
+      <div class="about-photo-wrap">
+        <img class="about-photo" src="https://educadug.github.io/discovery-lab/about/diego.jpg?v=2" alt="Diego Urrutia Guevara" loading="lazy">
+      </div>
+      <h3 class="about-heading">Diego Urrutia Guevara</h3>
+      <p class="about-subheading">Studied in Norway, Spain and New Zealand. Taught in the UK, Spain and New Zealand. Now teaching students across four continents.</p>
+      <div class="about-chip-row">${chips.map(c => `<span class="about-chip">${c}</span>`).join("")}</div>
+      <a class="btn-linkedin" href="${esc(LINKEDIN_URL)}" target="_blank" rel="noopener noreferrer">Connect on LinkedIn</a>
+    </div>
+    <div class="card">
+      <h3>About Diego</h3>
+      <p>Diego's classroom has never had one nationality in it. He studied in Norway, Spain and New Zealand, taught in both private and state schools in the United Kingdom and Spain, and now teaches from New Zealand to students in Europe, the United States, Japan, China, Southeast Asia and Australia.</p>
+      <p>That range is not a travel list — it is the substance of how he teaches. Students arrive from different school systems, different languages and very different ideas of what a good answer looks like. Teaching all of them well means building lessons around thinking rather than around the habits of any single curriculum.</p>
+      <p>Before and alongside education, Diego worked in international consultancy and biodiversity. He believes students learn best when knowledge is connected to real problems, investigation, decision-making and the world beyond the classroom.</p>
+      <p>Running through all of it is a particular interest in the thoughtful use of technology and AI in education. Discovery Lab is where that becomes something you can click: simulations and investigations where students experiment, decide, test ideas and learn by doing.</p>
+    </div>
+    <div class="card about-closing">
+      <h3>Full background and experience</h3>
+      <p>Qualifications, teaching history and professional work are all on LinkedIn. Connect there, or get in touch.</p>
+      <a class="btn-linkedin" href="${esc(LINKEDIN_URL)}" target="_blank" rel="noopener noreferrer">View LinkedIn profile</a>
+    </div>
+  `;
+  document.getElementById('tab-about').innerHTML = html + footerHtml();
+}
+
+renderOverview();
+renderProgress();
+renderHelpAtHome();
+renderSessions();
+renderAbout();
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
